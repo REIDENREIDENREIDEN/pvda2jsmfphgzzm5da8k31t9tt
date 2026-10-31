@@ -1,0 +1,22 @@
+name: FactionsEmu
+main: emu.FactionsEmu
+version: 1.0
+load: STARTUP
+description: Emulador minimo de un servidor de factions para probar la preparacion automatica del mod (/wild, /f, /fly, /ci, /printer, chunk busters).
+commands:
+  wild:
+    description: GUI de teletransporte random
+  f:
+    description: Factions minimo (create, claim, map, setwarp, warp, show)
+  fly:
+    description: Prende/apaga el vuelo
+  ci:
+    description: Limpia el inventario
+  printer:
+    description: Prende/apaga el printer mode
+  cbgive:
+    description: Da chunk busters (op/consola) - /cbgive <jugador> <cantidad>
+  bal:
+    description: Dinero
+  emu:
+    description: Admin del emulador - /emu reset | /emu enemy <jugador> <dx> <dz> | /emu info

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Banco flujo r1: /wild cae en agua (oceano/rio): claim y busters con agua
+DESC='/wild cae en agua (oceano/rio): claim y busters con agua'
+EXPECT='DONE'
+N=55
+LAG=0
+JIT=0
+MIN=20
+OVR=$(cat <<'EOF_OVR'
+wild:
+  avoid-liquids: false
+  force-water: true
+EOF_OVR
+)
+SEED=flujo2-a03-agua

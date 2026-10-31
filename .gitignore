@@ -1,0 +1,3 @@
+runs/
+*.jar
+__pycache__/

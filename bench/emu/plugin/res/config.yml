@@ -1,0 +1,124 @@
+# FactionsEmu: textos y parametros. Todos los textos usan & para colores. Cambialos por los del servidor real
+# cuando el modo captura del mod los traiga (logs/canebot-autosetup.log).
+
+wild:
+  gui-title: "&8Random Teleport"
+  gui-size: 27
+  pearl-slot: 13
+  pearl-name: "&a&lRandom Teleport"
+  pearl-lore: ["&7Click to teleport to a", "&7random location in the wild."]
+  # Items de relleno/decoracion (no teletransportan).
+  filler: true
+  delay-ticks: 30
+  cooldown-seconds: 8
+  min-radius: 1200
+  max-radius: 4000
+  avoid-liquids: true
+  # r2-terreno: destino seguro como un RTP real (pobla los chunks vecinos, piso solido, pies/cabeza libres, sin lava al lado).
+  safe: true
+  # Probabilidad de sembrar claims de otra faction cerca del destino (dentro del /f map).
+  enemy-chance: 0.45
+  # Distancia en chunks del claim enemigo al destino (X hasta 24 y Z hasta 8 se ven en el mapa).
+  enemy-min-chunks: 2
+  enemy-max-chunks: 8
+  msg-teleporting: "&aTeleporting you to a random location..."
+  msg-teleported: "&aYou have been teleported to &e%x%, %y%, %z%&a."
+  msg-cooldown: "&cYou must wait %s seconds before using /wild again."
+
+map:
+  # Cabecera como el servidor real: ____< (X,Z) Wilderness >____
+  header: "&6&m______________&r&6< &a(%x%,%z%) %territory% &6>&6&m______________"
+  height: 17
+  width: 49
+  wild-char: "-"
+  wild-color: "&7"
+  player-char: "+"
+  player-color: "&b"
+  own-char: "/"
+  own-color: "&a"
+  enemy-char: "\\"
+  enemy-color: "&c"
+  compass-color: "&6"
+  compass-active-color: "&c"
+  territory-wilderness: "&2Wilderness"
+  # Vacio = sin leyenda (el servidor real no muestra leyenda en las capturas).
+  legend: ""
+
+faction:
+  name-regex: "[A-Za-z0-9]{3,16}"
+  msg-not-in-faction: "&cYou are not member of any faction."
+  msg-must-leave: "&cYou must leave your current faction first."
+  msg-tag-taken: "&cThat tag is already in use."
+  msg-bad-name: "&cFaction tag must be alphanumeric and between 3 and 16 characters."
+  msg-created: "&eYou created the faction &a%name%&e."
+  show-wilderness-for-factionless: true
+  show-lines:
+    - "&6_____________.[ &a%name% &6].______________"
+    - "&6Description: &eDefault faction description :("
+    - "&6Joining: &eno invitation is needed"
+    - "&6Land / Power / Maxpower: &e%land% / 10 / 10"
+  msg-disabled: "&cThat command is disabled on this server."
+
+claim:
+  max-radius: 15
+  cost-per-chunk: 0.0
+  msg-ok: "&a%name% claimed &e%count% &achunks of land (radius %radius%)."
+  msg-conflict: "&cCan't claim chunk %x%,%z%: it is owned by %owner%."
+  msg-money: "&cYou can't afford to claim this land (%cost%)."
+  msg-usage: "&cUsage: /f claim <radius>"
+
+warp:
+  msg-set: "&aSet warp &e%name% &aat your location."
+  msg-not-own: "&cYou can only set warps in your faction territory."
+  msg-warped: "&aWarped to &e%name%&a."
+  msg-unknown: "&cThat warp does not exist."
+
+fly:
+  msg-on: "&aFly mode &2enabled&a."
+  msg-off: "&cFly mode disabled."
+
+ci:
+  msg: "&aYour inventory has been cleared."
+
+printer:
+  creative: true
+  msg-on: "&aYou have enabled printer mode."
+  msg-off: "&cYou have disabled printer mode."
+
+money:
+  start: 1000000.0
+
+buster:
+  material: ENDER_PORTAL_FRAME
+  name: "&6&lChunk Buster"
+  lore: ["&7Place this to clear the whole", "&7chunk down to bedrock."]
+  cooldown-seconds: 5
+  # own = solo en territorio propio; own-or-wilderness; any
+  territory: own-or-wilderness
+  start-delay-ticks: 20
+  # Capas que borra por tick, de arriba hacia abajo (solo queda la bedrock).
+  layers-per-tick: 2
+  msg-placed: "&aChunk Buster placed! Clearing chunk &e%x%, %z%&a..."
+  msg-cooldown: "&cYou have a cooldown of %s seconds before placing another Chunk Buster."
+  msg-territory: "&cYou can only place Chunk Busters in your own territory or the wilderness."
+  msg-done: "&aChunk %x%, %z% has been cleared."
+  # TERRENO: top-down | bottom-up; ticks-per-layer > 1 = mas lento; physics = gravedad y liquidos del borde;
+  # leave-chance = probabilidad de que deje un grupo de 2x2x2 de piedra (fuerza la re-verificacion).
+  order: top-down
+  ticks-per-layer: 1
+  physics: false
+  leave-chance: 0.0
+
+world:
+  # La bedrock del mundo queda plana en y=0 (las bases reales del usuario estan en y=1).
+  flat-bedrock: true
+  # Bloques flotantes sobre el terreno (por chunk).
+  floating-chance: 0.18
+  # TERRENO (banco r1-terreno): chunks parcialmente borrados, pilares altos, mas bloques flotantes.
+  partial-chance: 0.0
+  pillar-chance: 0.0
+  pillar-top: 250
+  floating-extra-chance: 0.0
+  floating-max-y: 240
+  floating-spread: 10
+  floating-size: 4
