@@ -21,6 +21,11 @@ case "$BENCH" in
       echo "$line" > $O/cmd-$t.txt
       timeout 25m bash -c "$line" || echo "[shard] $t salio con $?"
       grep -q "^RES $t " $O/results.txt 2>/dev/null || echo "RES $t ERROR=timeout-o-sin-RES" >> $O/results.txt
+      if ! grep -q "^RES $t done=1" $O/results.txt; then
+        echo "[shard] $t sin done=1: ultimas lineas de autosetup.log y server.log"
+        tail -n 40 $O/$t/autosetup.log 2>/dev/null | sed "s/^/[as $t] /"
+        tail -n 40 $O/$t/server.log 2>/dev/null | sed "s/^/[srv $t] /"
+      fi
       cleanup
     done ;;
   flujo)
