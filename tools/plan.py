@@ -32,9 +32,9 @@ QUICK = {
 
 def select(bench, spec):
     allv = names(bench)
-    if spec.strip() == 'quick':
-        spec = QUICK[bench]
-    toks = spec.replace(',', ' ').split()
+    toks = []
+    for t in spec.replace(',', ' ').split():
+        toks += QUICK[bench].split() if t == 'quick' else [t]
     if not toks or toks == ['all']:
         return allv
     out = []
