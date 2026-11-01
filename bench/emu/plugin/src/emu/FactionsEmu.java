@@ -445,7 +445,7 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
         for (String o : claims.values()) if (o.equals(k)) ownTotal++;
         int ring = radius + 1;
         for (int dx = -ring; dx <= ring; dx++) for (int dz = -ring; dz <= ring; dz++) if (k.equals(ownerAt(ccx + dx, ccz + dz))) own++;
-        int solid = 0, liquid = 0, bad = 0;
+        int solid = 0, liquid = 0, bad = 0, replaceable = 0;
         StringBuilder badChunks = new StringBuilder();
         Map<Material, Integer> types = new HashMap<Material, Integer>();
         for (int dx = -radius; dx <= radius; dx++) {
@@ -455,6 +455,9 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
                     Block b = w.getWorld().getBlockAt((ccx + dx) * 16 + x, y, (ccz + dz) * 16 + z);
                     Material m = b.getType();
                     if (m == Material.AIR || m == Material.BEDROCK) continue;
+                    // Plantas reemplazables (una enredadera que crecio desde la pared despues del buster): no estorban,
+                    // el printer las pisa al colocar. Se cuentan aparte.
+                    if (m == Material.VINE || m == Material.LONG_GRASS || m == Material.DEAD_BUSH || m == Material.SNOW) { replaceable++; continue; }
                     if (b.isLiquid()) liquid++;
                     else { solid++; n++; Integer q = types.get(m); types.put(m, q == null ? 1 : q + 1); }
                 }
@@ -464,7 +467,7 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
         int side = 2 * radius + 1, sideRing = 2 * ring + 1;
         String r = String.format(Locale.ROOT, "CHECK print=%d faction=%s warp=%.2f,%.2f,%.2f chunk=%d,%d warpCentrado=%s claim%dx%d=%d/%d claimsTotal=%d hueco%dx%d solidos=%d liquidos=%d chunksConBloques=%d%s jugador=%s",
             printPlaced, f.name, w.getX(), w.getY(), w.getZ(), ccx, ccz, (Math.abs(w.getX() - (ccx * 16 + 8)) <= 8 && Math.abs(w.getZ() - (ccz * 16 + 8)) <= 8),
-            sideRing, sideRing, own, sideRing * sideRing, ownTotal, side, side, solid, liquid, bad, badChunks + " tipos=" + types,
+            sideRing, sideRing, own, sideRing * sideRing, ownTotal, side, side, solid, liquid, bad, badChunks + " tipos=" + types + " reemplazables=" + replaceable,
             t == null ? "-" : String.format(Locale.ROOT, "%.2f,%.2f,%.2f (relativo a la esquina min del hueco: %.2f,%.2f)", t.getLocation().getX(), t.getLocation().getY(), t.getLocation().getZ(),
                 t.getLocation().getX() - (ccx - radius) * 16, t.getLocation().getZ() - (ccz - radius) * 16));
         log(r);
