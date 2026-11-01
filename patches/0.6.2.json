@@ -1,0 +1,11 @@
+{
+ "version": "0.6.2",
+ "strings": [
+  {
+   "class": "com/canetowerbot/autosetup/SetupConfig.class",
+   "old": "(?:cooldown|wait|esper)\\D{0,40}?(\\d+)",
+   "new": "^(?!.*(?:teleporting you|you will be teleported|teleportation (?:will )?(?:commence|start|begin)|don'?t move|do not move|no te muevas|teletransport(?:ando|aras))).*?(?:cooldown|wait|esper|another|again in|cannot use|can'?t use|no puedes usar)\\D{0,40}?\\d",
+   "why": "wild: el warmup del tp no es cooldown; reconocer 'cannot use /wild for another 1m 10s'"
+  }
+ ]
+}

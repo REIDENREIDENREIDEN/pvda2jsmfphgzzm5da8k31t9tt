@@ -19,6 +19,9 @@ on:
       jar_sha256:
         description: sha256 esperado del jar descifrado (vacio = no verificar)
         default: 1e133afe27e9290542ef9324721e13f7e7a18ede3a2182eab8c4109e95da7d47
+      patch:
+        description: parche de textos a aplicar sobre el jar (patches/NOMBRE.json; vacio = jar tal cual)
+        default: "0.6.2"
 
 permissions:
   contents: read
@@ -87,6 +90,7 @@ jobs:
           JAR_KEY: ${{ secrets.JAR_KEY }}
           JAR: ${{ inputs.jar }}
           SHA: ${{ inputs.jar_sha256 }}
+          PATCH: ${{ inputs.patch }}
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
@@ -102,6 +106,7 @@ jobs:
               [ $ok = 1 ] || { echo "no se pudo descifrar m.bin (clave incorrecta?)"; exit 1; } ;;
           esac
           if [ -n "$SHA" ]; then echo "$SHA  m.jar" | sha256sum -c --quiet - || { echo "sha256 del jar distinto"; exit 1; }; fi
+          if [ -n "$PATCH" ]; then python3 -I "$GITHUB_WORKSPACE/tools/patchjar.py" m.jar "$GITHUB_WORKSPACE/patches/$PATCH.json"; fi
           mkdir -p ~/work-root && mv m.jar ~/work-root/m.jar
           echo "jar ok: $(sha256sum ~/work-root/m.jar | cut -c1-12)"
       - name: run
