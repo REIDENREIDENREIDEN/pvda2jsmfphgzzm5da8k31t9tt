@@ -67,6 +67,9 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
     private final Map<UUID, Long> busterCooldown = new HashMap<UUID, Long>();
     private final Set<UUID> printer = new HashSet<UUID>();
     private final Set<Long> clearing = new HashSet<Long>();
+    // Chunks donde se puso un buster. El buster real borra todo (liquidos y bloques con fisica incluidos) sin
+    // actualizar a los vecinos: ni el agua/lava ni la arena/grava del anillo entran despues al chunk limpiado.
+    private final Set<Long> busted = new HashSet<Long>();
     private final Random random = new Random();
     private int enemySeq;
     private int bustersPlaced, chunksCleared, wildTps, enemySeeds;
@@ -880,7 +883,21 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
         return true;
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onBustedFlow(org.bukkit.event.block.BlockFromToEvent e) {
+        Block t = e.getToBlock();
+        if (busted.contains(key(t.getX() >> 4, t.getZ() >> 4))) e.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBustedFall(org.bukkit.event.entity.EntityChangeBlockEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.FallingBlock)) return;
+        Block b = e.getBlock();
+        if (busted.contains(key(b.getX() >> 4, b.getZ() >> 4))) { e.setCancelled(true); e.getEntity().remove(); }
+    }
+
     private void startClear(final Player p, final World w, final int cx, final int cz) {
+        busted.add(key(cx, cz));
         // TERRENO: orden (top-down | bottom-up), velocidad (layers-per-tick, ticks-per-layer), fisica (gravedad y
         // liquidos que entran del borde) y bloques que el buster deja (leave-chance: un grupo de piedra suelto).
         final int layers = Math.max(1, getConfig().getInt("buster.layers-per-tick", 2));
@@ -909,7 +926,7 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
                             if (leave && x >= lx && x < lx + 2 && z >= lz && z < lz + 2 && y[0] >= ly && y[0] < ly + 2) continue;
                             Block b = w.getBlockAt(cx * 16 + x, y[0], cz * 16 + z);
                             Material m = b.getType();
-                            if (m != Material.AIR && m != Material.BEDROCK) b.setType(Material.AIR, physics);
+                            if (m != Material.AIR && m != Material.BEDROCK) b.setType(Material.AIR, false); // el buster real no actualiza vecinos (buster.physics ya no aplica)
                         }
                     }
                     y[0] += bottomUp ? 1 : -1;

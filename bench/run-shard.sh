@@ -31,6 +31,7 @@ case "$BENCH" in
       echo "[shard $(date +%T)] flujo $e"
       timeout 35m bash $E/flujo.sh $E/esc/$e.sh "$JAR" || echo "[shard] $e salio con $?"
       V=$O/$e/veredicto.txt
+      [ -s $O/$e/check-hueco.txt ] && sed "s/^/[check $e] /" $O/$e/check-hueco.txt
       if [ -s "$V" ]; then
         python3 - "$e" "$V" "$O/$e/duracion.txt" >> $O/results.txt <<'PY'
 import json, sys

@@ -70,6 +70,9 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
     private final Map<UUID, Long> busterCooldown = new HashMap<UUID, Long>();
     private final Set<UUID> printer = new HashSet<UUID>();
     private final Set<Long> clearing = new HashSet<Long>();
+    // Chunks donde se puso un buster. El buster real borra todo (liquidos y bloques con fisica incluidos) sin
+    // actualizar a los vecinos: ni el agua/lava ni la arena/grava del anillo entran despues al chunk limpiado.
+    private final Set<Long> busted = new HashSet<Long>();
     private final Random random = new Random();
     private int enemySeq;
     private int bustersPlaced, chunksCleared, wildTps, enemySeeds;
@@ -1009,7 +1012,21 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onBustedFlow(org.bukkit.event.block.BlockFromToEvent e) {
+        Block t = e.getToBlock();
+        if (busted.contains(key(t.getX() >> 4, t.getZ() >> 4))) e.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBustedFall(org.bukkit.event.entity.EntityChangeBlockEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.FallingBlock)) return;
+        Block b = e.getBlock();
+        if (busted.contains(key(b.getX() >> 4, b.getZ() >> 4))) { e.setCancelled(true); e.getEntity().remove(); }
+    }
+
     private void startClear(final Player p, final World w, final int cx, final int cz) {
+        busted.add(key(cx, cz));
         final int layers = Math.max(1, getConfig().getInt("buster.layers-per-tick", 2));
         final int[] y = {-1};
         final BukkitTask[] task = new BukkitTask[1];
