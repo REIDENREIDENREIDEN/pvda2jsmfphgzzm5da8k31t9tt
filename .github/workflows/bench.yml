@@ -1,0 +1,152 @@
+name: bench
+on:
+  workflow_dispatch:
+    inputs:
+      bench:
+        description: terreno o flujo
+        type: choice
+        options: [terreno, flujo]
+        default: terreno
+      scenarios:
+        description: "all, o lista separada por espacios (admite comodines: d0* a01-*)"
+        default: all
+      shards:
+        description: jobs en paralelo (maximo 20)
+        default: "20"
+      jar:
+        description: tag del release con m.bin, URL https:// o ruta en el repo
+        default: jar-0.6.1
+      jar_sha256:
+        description: sha256 esperado del jar descifrado (vacio = no verificar)
+        default: 1e133afe27e9290542ef9324721e13f7e7a18ede3a2182eab8c4109e95da7d47
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-${{ github.run_id }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+      items: ${{ steps.m.outputs.items }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        env:
+          BENCH: ${{ inputs.bench }}
+          SCEN: ${{ inputs.scenarios }}
+          SHARDS: ${{ inputs.shards }}
+        run: |
+          items=$(python3 tools/plan.py select "$BENCH" "$SCEN")
+          matrix=$(python3 tools/plan.py matrix "$BENCH" "$SCEN" "$SHARDS")
+          echo "items=$items" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Escenarios: $items"
+          echo "Matrix: $matrix"
+
+  prep:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/work-root/.cache
+            ~/work-root/mc
+          key: bench-${{ runner.os }}-${{ hashFiles('setup.sh') }}
+      - name: setup
+        run: bash setup.sh 2>&1 | tee setup.log
+
+  shard:
+    needs: [plan, prep]
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/work-root/.cache
+            ~/work-root/mc
+          key: bench-${{ runner.os }}-${{ hashFiles('setup.sh') }}
+      - name: setup
+        run: bash setup.sh > setup.log 2>&1 || { tail -60 setup.log; exit 1; }
+      - name: jar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAR_KEY: ${{ secrets.JAR_KEY }}
+          JAR: ${{ inputs.jar }}
+          SHA: ${{ inputs.jar_sha256 }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          case "$JAR" in
+            https://*) curl -fsSL --retry 3 -o m.jar "$JAR" ;;
+            *.jar) cp "$GITHUB_WORKSPACE/$JAR" m.jar ;;
+            *)
+              gh release download "$JAR" -R "$GITHUB_REPOSITORY" -p m.bin --clobber
+              [ -n "${JAR_KEY:-}" ] || { echo "falta el secret JAR_KEY"; exit 1; }
+              umask 077; printf '%s' "$JAR_KEY" > k
+              ok=0; openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in m.bin -out m.jar -pass file:k && ok=1
+              rm -f k m.bin
+              [ $ok = 1 ] || { echo "no se pudo descifrar m.bin (clave incorrecta?)"; exit 1; } ;;
+          esac
+          if [ -n "$SHA" ]; then echo "$SHA  m.jar" | sha256sum -c --quiet - || { echo "sha256 del jar distinto"; exit 1; }; fi
+          mkdir -p ~/work-root && mv m.jar ~/work-root/m.jar
+          echo "jar ok: $(sha256sum ~/work-root/m.jar | cut -c1-12)"
+      - name: run
+        env:
+          BENCH: ${{ inputs.bench }}
+          ITEMS: ${{ matrix.items }}
+        run: bash bench/run-shard.sh "$BENCH" ~/work-root/m.jar "$ITEMS"
+      - name: collect
+        if: always()
+        env:
+          BENCH: ${{ inputs.bench }}
+        run: |
+          D=/home/user/emu/out; [ "$BENCH" = flujo ] && D=/home/user/emu-flujo/out
+          mkdir -p res
+          [ -d "$D" ] && cp -rL "$D" res/out || true
+          find res -type f \( -name 'cliente.log' -o -name 'chat.txt' \) -delete || true
+          cp setup.log res/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: res-${{ inputs.bench }}-${{ matrix.id }}
+          path: res
+          retention-days: 14
+          if-no-files-found: warn
+
+  merge:
+    needs: [plan, shard]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: res-${{ inputs.bench }}-*
+          path: all
+      - env:
+          ITEMS: ${{ needs.plan.outputs.items }}
+        run: |
+          mkdir -p all
+          python3 tools/merge.py all --expect "$ITEMS" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: summary-${{ inputs.bench }}
+          path: |
+            all/summary.md
+            all/results-all.txt
+          retention-days: 14
