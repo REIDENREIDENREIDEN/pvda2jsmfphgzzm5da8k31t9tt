@@ -21,8 +21,19 @@ def names(bench):
     sys.exit('bench desconocido: %s' % bench)
 
 
+# Corrida rapida e2e (~10 min, un escenario por job): /wild, faction (con nombre tomado), claim, warp al centro,
+# chunk busters y verificacion, en terrenos y fallas representativos.
+QUICK = {
+    'terreno': 'd01 a01 a07 w-lava w-lagos p-d01 v-cuevas b-jungla',
+    'flujo': 'a01-base a03-agua a07-nieve-ping b09-cae-en-claim b11-enemigo-borde c02-nombre-tomado2 '
+             'c11-tomado-castellano e03-busters49 f02-ping250 g07-crash-claim g08-crash-verify h01-ci-confirmacion',
+}
+
+
 def select(bench, spec):
     allv = names(bench)
+    if spec.strip() == 'quick':
+        spec = QUICK[bench]
     toks = spec.replace(',', ' ').split()
     if not toks or toks == ['all']:
         return allv
@@ -39,7 +50,7 @@ def cmd_terreno(tag, jar):
     for t, lt, gen, mods, extra in genplan.R:
         if t == tag:
             sed = ';'.join(genplan.S[m] for m in mods)
-            return ("SEED=r2t-%s LEVEL_TYPE=%s GEN='%s' EMU_SED='%s' POST=90 MIN=16 %s bash /home/user/emu/run.sh %s %s"
+            return ("SEED=r2t-%s LEVEL_TYPE=%s GEN='%s' EMU_SED='%s' POST=15 MIN=16 %s bash /home/user/emu/run.sh %s %s"
                     % (t, lt, gen, sed, extra, jar, t))
     sys.exit('tag desconocido: %s' % tag)
 

@@ -8,8 +8,8 @@ on:
         options: [terreno, flujo]
         default: terreno
       scenarios:
-        description: "all, o lista separada por espacios (admite comodines: d0* a01-*)"
-        default: all
+        description: "quick (e2e rapido, ~10 min), all, o lista separada por espacios (admite comodines)"
+        default: quick
       shards:
         description: jobs en paralelo (maximo 20)
         default: "20"
