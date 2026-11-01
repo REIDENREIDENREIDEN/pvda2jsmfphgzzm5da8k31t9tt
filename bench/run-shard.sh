@@ -7,15 +7,19 @@
 set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 BENCH=$1; JAR=$(readlink -f "$2"); ITEMS=$3
+T0=$(date +%s); BUDGET=${BUDGET_MIN:-320}
+# sin_tiempo MIN: true si el escenario siguiente ya no entra en el presupuesto del job
+sin_tiempo() { [ $(( ($(date +%s) - T0) / 60 + $1 )) -gt $BUDGET ]; }
 cleanup() { bash /home/user/banco/cli.sh stop >/dev/null 2>&1; pkill -f '[l]ag.py'; bash /home/user/emu/srv.sh stop >/dev/null 2>&1; bash /home/user/emu-flujo/srv.sh stop >/dev/null 2>&1; }
 case "$BENCH" in
   terreno)
     O=/home/user/emu/out; mkdir -p $O
     for t in $ITEMS; do
+      if sin_tiempo 25; then echo "RES $t ERROR=sin-tiempo" >> $O/results.txt; continue; fi
       echo "[shard $(date +%T)] terreno $t"
       line=$(python3 "$ROOT/tools/plan.py" cmd terreno "$t" "$JAR") || { echo "RES $t ERROR=plan" >> $O/results.txt; continue; }
       echo "$line" > $O/cmd-$t.txt
-      timeout 45m bash -c "$line" || echo "[shard] $t salio con $?"
+      timeout 25m bash -c "$line" || echo "[shard] $t salio con $?"
       grep -q "^RES $t " $O/results.txt 2>/dev/null || echo "RES $t ERROR=timeout-o-sin-RES" >> $O/results.txt
       cleanup
     done ;;
@@ -23,8 +27,9 @@ case "$BENCH" in
     E=/home/user/emu-flujo; O=$E/out; mkdir -p $O
     bash $E/srv.sh build > $O/build.log 2>&1 || { for e in $ITEMS; do echo "RES $e ERROR=build" >> $O/results.txt; done; exit 1; }
     for e in $ITEMS; do
+      if sin_tiempo 35; then echo "RES $e ERROR=sin-tiempo" >> $O/results.txt; continue; fi
       echo "[shard $(date +%T)] flujo $e"
-      timeout 50m bash $E/flujo.sh $E/esc/$e.sh "$JAR" || echo "[shard] $e salio con $?"
+      timeout 35m bash $E/flujo.sh $E/esc/$e.sh "$JAR" || echo "[shard] $e salio con $?"
       V=$O/$e/veredicto.txt
       if [ -s "$V" ]; then
         python3 - "$e" "$V" "$O/$e/duracion.txt" >> $O/results.txt <<'PY'

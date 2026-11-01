@@ -105,6 +105,7 @@ jobs:
           mkdir -p ~/work-root && mv m.jar ~/work-root/m.jar
           echo "jar ok: $(sha256sum ~/work-root/m.jar | cut -c1-12)"
       - name: run
+        timeout-minutes: 330
         env:
           BENCH: ${{ inputs.bench }}
           ITEMS: ${{ matrix.items }}
