@@ -1,0 +1,34 @@
+name: export
+# Copia privada del jar (autorizada por el dueno): descifra m.bin con JAR_KEY y lo vuelve a cifrar con una clave AES
+# nueva envuelta con la clave publica de tools/keys/export.pub.pem. Sube m.exp + k.exp al release.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        default: jar-0.6.1
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          JAR_KEY: ${{ secrets.JAR_KEY }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          P=$GITHUB_WORKSPACE/tools/keys/export.pub.pem
+          cd "$RUNNER_TEMP"; umask 077
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p m.bin --clobber
+          printf '%s' "$JAR_KEY" > k
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in m.bin -out m.jar -pass file:k
+          rm -f k m.bin
+          openssl rand -hex 32 > ak
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in m.jar -out m.exp -pass file:ak
+          openssl pkeyutl -encrypt -pubin -inkey "$P" -pkeyopt rsa_padding_mode:oaep -in ak -out k.exp
+          rm -f ak m.jar
+          gh release upload "$TAG" m.exp k.exp -R "$GITHUB_REPOSITORY" --clobber
+          echo "export ok"
