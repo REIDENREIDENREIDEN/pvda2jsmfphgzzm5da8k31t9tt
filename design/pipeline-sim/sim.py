@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 FAMILIES = ["Angelic", "Armored", "Deathbringer", "Enlighted", "Life Essence", "Valor", "Tank", "Health Boost"]
 PIECES = ["Helmet", "Chestplate", "Leggings", "Boots"]
 FRAGS_PER_RUNE = 3          # botellas (fragmentos) de una familia para llegar a una runa al 100%
-MAX_TICKS = 40_000
+MAX_TICKS = 120_000
 
 
 class Store:
@@ -225,10 +225,12 @@ class Runero(Bot):
             if w.c[self.inv]["frag:" + fam] >= FRAGS_PER_RUNE:          # blend
                 w.c[self.inv]["frag:" + fam] -= FRAGS_PER_RUNE
                 w.c[self.inv][fam] += 1
+                s.index[self.inv] = Counter(w.c[self.inv])
                 return
         if w.c[self.inv]["Bottle"] > 0:                                     # abrir botella
             w.c[self.inv]["Bottle"] -= 1
             w.c[self.inv]["frag:" + self.rng.choice(FAMILIES)] += 1
+            s.index[self.inv] = Counter(w.c[self.inv])
             return
         if w.c["BOTTLES"]["Bottle"] > 0:
             self.transfer(now, "BOTTLES", self.inv, "Bottle", min(8, w.c["BOTTLES"]["Bottle"]))
