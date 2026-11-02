@@ -1,0 +1,153 @@
+name: sandbox-e2e
+# Version Remote Sandbox: codigo cifrado en sandbox/src.bin (ver sandbox/LEEME.md). Compila y corre los bancos.
+on:
+  push:
+    branches: [main]
+    paths: ['sandbox/src.bin', 'sandbox/e2e.env']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+      items: ${{ steps.m.outputs.items }}
+      cane: ${{ steps.m.outputs.cane }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: hay
+        run: '[ -f sandbox/src.bin ] && echo ok=1 >> "$GITHUB_OUTPUT" || echo "falta sandbox/src.bin"'
+      - uses: actions/setup-java@v4
+        if: steps.hay.outputs.ok == '1'
+        with:
+          distribution: temurin
+          java-version: '8'
+      - uses: actions/cache@v4
+        if: steps.hay.outputs.ok == '1'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: fg2-sandbox-${{ hashFiles('sandbox/src.bin') }}
+          restore-keys: fg2-sandbox-
+      - name: compilar
+        if: steps.hay.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAR_KEY: ${{ secrets.JAR_KEY }}
+        run: |
+          set -euo pipefail
+          W=$RUNNER_TEMP; cd $W; umask 077
+          gh release download jar-0.6.1 -R "$GITHUB_REPOSITORY" -p m.bin --clobber
+          printf '%s' "$JAR_KEY" > k
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in m.bin -out orig.jar -pass file:k; rm -f k m.bin
+          { cat orig.jar; printf 'overlay-sandbox'; } | sha256sum | cut -c1-64 | tr -d '\n' > ks
+          { cat orig.jar; printf 'overlay-sandboxjar'; } | sha256sum | cut -c1-64 | tr -d '\n' > kj
+          rm -f orig.jar
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$GITHUB_WORKSPACE/sandbox/src.bin" -out src.tgz -pass file:ks
+          mkdir src && tar xzf src.tgz -C src && rm -f src.tgz ks
+          cd src && sed -i 's/\r$//' gradlew && chmod +x gradlew
+          ./gradlew --no-daemon -q build 2>&1 | grep -v '^Note:' | tail -20
+          J=$(ls build/libs/CaneTowerBot-*.jar | grep -v sources | head -1); echo "jar $(basename $J) $(sha256sum $J | cut -c1-12)"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$J" -out $GITHUB_WORKSPACE/m.enc -pass file:$W/kj
+          cd $W && rm -rf src kj
+      - uses: actions/upload-artifact@v4
+        if: steps.hay.outputs.ok == '1'
+        with:
+          name: modjar-cifrado
+          path: m.enc
+          retention-days: 3
+      - id: m
+        if: steps.hay.outputs.ok == '1'
+        run: |
+          TE=$(sed -n 's/^terreno=//p' sandbox/e2e.env); FL=$(sed -n 's/^flujo=//p' sandbox/e2e.env)
+          C=$(sed -n 's/^cane_secs=//p' sandbox/e2e.env); echo "cane=${C:-240}" >> "$GITHUB_OUTPUT"
+          python3 - "$TE" "$FL" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, subprocess, sys
+          inc, items = [], []
+          for bench, spec in (('terreno', sys.argv[1]), ('flujo', sys.argv[2])):
+              if not spec.strip():
+                  continue
+              names = subprocess.check_output([sys.executable, 'tools/plan.py', 'select', bench, spec], text=True).split()
+              items += names
+              inc += [{'bench': bench, 'id': '%s-%02d' % (bench[0], k), 'items': n} for k, n in enumerate(names)]
+          print('matrix=' + json.dumps({'include': inc}, separators=(',', ':')))
+          print('items=' + ' '.join(items))
+          PY
+
+  shard:
+    needs: build
+    if: needs.build.outputs.matrix != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: modjar-cifrado
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/work-root/.cache
+            ~/work-root/mc
+          key: bench-${{ runner.os }}-${{ hashFiles('setup.sh') }}
+      - name: setup
+        run: bash setup.sh > setup.log 2>&1 || { tail -60 setup.log; exit 1; }
+      - name: jar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAR_KEY: ${{ secrets.JAR_KEY }}
+        run: |
+          set -euo pipefail
+          W=$RUNNER_TEMP; umask 077
+          gh release download jar-0.6.1 -R "$GITHUB_REPOSITORY" -p m.bin -D $W --clobber
+          printf '%s' "$JAR_KEY" > $W/k
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in $W/m.bin -out $W/orig.jar -pass file:$W/k; rm -f $W/k $W/m.bin
+          { cat $W/orig.jar; printf 'overlay-sandboxjar'; } | sha256sum | cut -c1-64 | tr -d '\n' > $W/kj; rm -f $W/orig.jar
+          mkdir -p ~/work-root
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in m.enc -out ~/work-root/m.jar -pass file:$W/kj; rm -f $W/kj m.enc
+          echo "jar ok: $(sha256sum ~/work-root/m.jar | cut -c1-12)"
+      - name: run
+        timeout-minutes: 330
+        env:
+          BENCH: ${{ matrix.bench }}
+          ITEMS: ${{ matrix.items }}
+        run: |
+          export CANE_SECS="${{ needs.build.outputs.cane }}"
+          bash bench/run-shard.sh "$BENCH" ~/work-root/m.jar "$ITEMS"
+      - name: collect
+        if: always()
+        env:
+          BENCH: ${{ matrix.bench }}
+        run: |
+          D=/home/user/emu/out; [ "$BENCH" = flujo ] && D=/home/user/emu-flujo/out
+          mkdir -p res; [ -d "$D" ] && cp "$D/results.txt" res/ || true
+          rm -f ~/work-root/m.jar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: res-${{ matrix.id }}
+          path: res
+          retention-days: 7
+
+  merge:
+    needs: [build, shard]
+    if: always() && needs.build.outputs.matrix != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: res-*
+          path: all
+      - env:
+          ITEMS: ${{ needs.build.outputs.items }}
+        run: |
+          mkdir -p all
+          python3 tools/merge.py all --expect "$ITEMS" | tee -a "$GITHUB_STEP_SUMMARY"
