@@ -19,6 +19,9 @@ on:
       jar_sha256:
         description: sha256 esperado del jar descifrado (vacio = no verificar)
         default: 1e133afe27e9290542ef9324721e13f7e7a18ede3a2182eab8c4109e95da7d47
+      cane_secs:
+        description: segundos de cane despues de preparar (terreno; 240 = una fila)
+        default: "240"
       patch:
         description: parche de textos a aplicar sobre el jar (patches/NOMBRE.json; vacio = jar tal cual)
         default: "0.6.2"
@@ -113,6 +116,7 @@ jobs:
         timeout-minutes: 330
         env:
           BENCH: ${{ inputs.bench }}
+          CANE_SECS: ${{ inputs.cane_secs }}
           ITEMS: ${{ matrix.items }}
         run: bash bench/run-shard.sh "$BENCH" ~/work-root/m.jar "$ITEMS"
       - name: collect

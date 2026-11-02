@@ -50,8 +50,10 @@ def cmd_terreno(tag, jar):
     for t, lt, gen, mods, extra in genplan.R:
         if t == tag:
             sed = ';'.join(genplan.S[m] for m in mods)
-            return ("SEED=r2t-%s LEVEL_TYPE=%s GEN='%s' EMU_SED='%s' POST=240 MIN=16 %s bash /home/user/emu/run.sh %s %s"
-                    % (t, lt, gen, sed, extra, jar, t))
+            # POST: segundos de cane despues del DONE (240 = una fila de 11 pilares); CANE_SECS lo cambia.
+            post = int(os.environ.get('CANE_SECS', '240'))
+            return ("SEED=r2t-%s LEVEL_TYPE=%s GEN='%s' EMU_SED='%s' POST=%d MIN=16 %s bash /home/user/emu/run.sh %s %s"
+                    % (t, lt, gen, sed, post, extra, jar, t))
     sys.exit('tag desconocido: %s' % tag)
 
 
