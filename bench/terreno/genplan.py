@@ -44,6 +44,17 @@ R = [
  ('x-meseta','CUSTOMIZED',B(36),['PART'],''), ('x-hongos','CUSTOMIZED',B(12),[],''), ('x-megataiga','CUSTOMIZED',B(31),['LEAVE'],''),
  ('x-aguaalta','CUSTOMIZED',J({"seaLevel":150}),['LEAVE'],''),
  ('x-voladizos','CUSTOMIZED',J({"heightScale":2500,"stretchY":1.5,"baseSize":7.0,"upperLimitScale":200}),['FLOAT','PILL'],''),
+ # RONDA Y: semillas nuevas de lo mas duro + combinaciones (lava/cuevas con fisica, agua alta con fallas, amplificado lento).
+ ('y-amp1','AMPLIFIED','',['PHYS'],''), ('y-amp2','AMPLIFIED','',['PART','PHYS'],''), ('y-amp3','AMPLIFIED','',['LEAVE','BUP','SLOW'],''),
+ ('y-amp4','AMPLIFIED','',['FLOAT','PILL','LEAVE'],''), ('y-amp5','AMPLIFIED','',['PART'],'RESUME_AT=180'),
+ ('y-cuevas','CUSTOMIZED',J({"useCaves":True,"useRavines":True,"useMineShafts":True,"dungeonChance":100,"seaLevel":12,"baseSize":4.5,"stretchY":18.0}),['PHYS','LEAVE'],''),
+ ('y-ravinas','CUSTOMIZED',J({"useRavines":True,"useCaves":True,"seaLevel":1,"baseSize":11.0,"heightScale":1800}),['PART'],''),
+ ('y-lava','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useLavaOceans":True,"seaLevel":70}),['PHYS'],''),
+ ('y-lavacuevas','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useCaves":True,"useRavines":True,"seaLevel":6,"baseSize":5.0}),['PART','LEAVE'],''),
+ ('y-picos','CUSTOMIZED',J({"biomeDepthOffset":4.0,"biomeScaleOffset":8.0,"heightScale":1500}),['PHYS'],''),
+ ('y-aguaalta','CUSTOMIZED',J({"seaLevel":130}),['PHYS','PART'],''), ('y-pantano','CUSTOMIZED',J({"fixedBiome":6,"seaLevel":75}),['PHYS','LEAVE'],''),
+ ('y-jungla','CUSTOMIZED',B(20),['LEAVE','SLOW'],''), ('y-mesa','CUSTOMIZED',B(37),['BUP'],''),
+ ('y-hielo','CUSTOMIZED',B(11),['PHYS','PART'],''), ('y-voladizos','CUSTOMIZED',J({"heightScale":2200,"stretchY":2.5,"baseSize":7.5,"upperLimitScale":250}),['FLOAT','LEAVE'],''),
 ]
 if __name__ == '__main__':
     nvm = int(sys.argv[1])
