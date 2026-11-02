@@ -25,6 +25,9 @@ on:
       patch:
         description: parche de textos a aplicar sobre el jar (patches/NOMBRE.json; vacio = jar tal cual)
         default: "0.6.2"
+      overlay:
+        description: "overlay cifrado de clases (overlays/NOMBRE.bin, p. ej. 0.6.3; vacio = ninguno). Clave: sha256(jar original + 'overlay-NOMBRE')"
+        default: ""
 
 permissions:
   contents: read
@@ -94,6 +97,7 @@ jobs:
           JAR: ${{ inputs.jar }}
           SHA: ${{ inputs.jar_sha256 }}
           PATCH: ${{ inputs.patch }}
+          OVERLAY: ${{ inputs.overlay }}
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
@@ -109,7 +113,12 @@ jobs:
               [ $ok = 1 ] || { echo "no se pudo descifrar m.bin (clave incorrecta?)"; exit 1; } ;;
           esac
           if [ -n "$SHA" ]; then echo "$SHA  m.jar" | sha256sum -c --quiet - || { echo "sha256 del jar distinto"; exit 1; }; fi
+          if [ -n "$OVERLAY" ]; then umask 077; { cat m.jar; printf 'overlay-%s' "$OVERLAY"; } | sha256sum | cut -c1-64 | tr -d '\n' > ok; fi
           if [ -n "$PATCH" ]; then python3 -I "$GITHUB_WORKSPACE/tools/patchjar.py" m.jar "$GITHUB_WORKSPACE/patches/$PATCH.json"; fi
+          if [ -n "$OVERLAY" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$GITHUB_WORKSPACE/overlays/$OVERLAY.bin" -out ov.zip -pass file:ok
+            python3 -I "$GITHUB_WORKSPACE/tools/overlayjar.py" m.jar ov.zip; rm -f ok ov.zip
+          fi
           mkdir -p ~/work-root && mv m.jar ~/work-root/m.jar
           echo "jar ok: $(sha256sum ~/work-root/m.jar | cut -c1-12)"
       - name: run
