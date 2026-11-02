@@ -37,13 +37,13 @@ R = [
  ('x-amp4','AMPLIFIED','',['FAST','BUP'],''), ('x-mezcla','AMPLIFIED','',['PART','LEAVE','PILL','SLOW'],''),
  ('x-cuevasexp','CUSTOMIZED',J({"useCaves":True,"useRavines":True,"useMineShafts":True,"dungeonChance":100,"seaLevel":10,"baseSize":4.0,"stretchY":20.0}),[],''),
  ('x-ravinas','CUSTOMIZED',J({"useRavines":True,"useCaves":True,"seaLevel":1,"baseSize":10.0,"heightScale":1500}),['LEAVE'],''),
- ('x-lavaexp','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":4,"useLavaOceans":True,"seaLevel":56}),[],''),
- ('x-lavacuevas','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":4,"useCaves":True,"useRavines":True,"seaLevel":8,"baseSize":5.0}),['PHYS'],''),
+ ('x-lavaexp','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useLavaOceans":True,"seaLevel":56}),[],''),
+ ('x-lavacuevas','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useCaves":True,"useRavines":True,"seaLevel":8,"baseSize":5.0}),['PHYS'],''),
  ('x-picos','CUSTOMIZED',J({"fixedBiome":3,"biomeDepthOffset":3.0,"biomeScaleOffset":6.0,"heightScale":2000}),[],''),
  ('x-picos2','CUSTOMIZED',J({"biomeDepthOffset":5.0,"biomeScaleOffset":10.0}),['SLOW','LEAVE'],''),
  ('x-meseta','CUSTOMIZED',B(36),['PART'],''), ('x-hongos','CUSTOMIZED',B(12),[],''), ('x-megataiga','CUSTOMIZED',B(31),['LEAVE'],''),
  ('x-aguaalta','CUSTOMIZED',J({"seaLevel":150}),['LEAVE'],''),
- ('x-voladizos','CUSTOMIZED',J({"heightScale":4000,"stretchY":1.5,"baseSize":7.0,"upperLimitScale":100}),['FLOAT','PILL'],''),
+ ('x-voladizos','CUSTOMIZED',J({"heightScale":2500,"stretchY":1.5,"baseSize":7.0,"upperLimitScale":200}),['FLOAT','PILL'],''),
 ]
 if __name__ == '__main__':
     nvm = int(sys.argv[1])

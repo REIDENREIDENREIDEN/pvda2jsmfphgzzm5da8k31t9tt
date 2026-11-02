@@ -376,6 +376,24 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
                 }
                 t.closeInventory();
             }
+        } else if (sub.equals("lava") && args.length >= 2) {
+            // Banco: lava en el piso del hueco (y=1..5, solo donde hay aire) sobre las lineas de la esquina del printer
+            // (direccion +X +Z, offset 1,3), en el chunk del medio de cada borde. Simula liquido que entro despues de
+            // verificar un chunk. El bot tiene que re-bustear esos chunks en vez de frenar.
+            Player t = Bukkit.getPlayerExact(args[1]);
+            String k = t == null ? null : members.get(t.getUniqueId());
+            Fac f = k == null ? null : factions.get(k);
+            Location w = f == null || f.warps.isEmpty() ? null : f.warps.values().iterator().next();
+            if (w != null) {
+                int ccx = w.getBlockX() >> 4, ccz = w.getBlockZ() >> 4, minX = (ccx - 3) * 16, minZ = (ccz - 3) * 16;
+                int[][] at = {{ccx * 16 + 8, minZ + 3}, {minX + 1, ccz * 16 + 8}};
+                int n = 0;
+                for (int[] a : at) for (int y = 1; y <= 5; y++) {
+                    Block b = w.getWorld().getBlockAt(a[0], y, a[1]);
+                    if (b.getType() == Material.AIR) { b.setType(Material.STATIONARY_LAVA, false); n++; }
+                }
+                log("LAVA " + n + " bloques en " + at[0][0] + ",1," + at[0][1] + " y " + at[1][0] + ",1," + at[1][1]);
+            }
         } else if (sub.equals("check") && args.length >= 2) {
             check(sender, args[1], args.length >= 3 ? Integer.parseInt(args[2]) : 3);
         } else {
