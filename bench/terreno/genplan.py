@@ -49,7 +49,7 @@ R = [
  ('y-amp4','AMPLIFIED','',['FLOAT','PILL','LEAVE'],''), ('y-amp5','AMPLIFIED','',['PART'],'RESUME_AT=180'),
  ('y-cuevas','CUSTOMIZED',J({"useCaves":True,"useRavines":True,"useMineShafts":True,"dungeonChance":100,"seaLevel":12,"baseSize":4.5,"stretchY":18.0}),['PHYS','LEAVE'],''),
  ('y-ravinas','CUSTOMIZED',J({"useRavines":True,"useCaves":True,"seaLevel":1,"baseSize":11.0,"heightScale":1800}),['PART'],''),
- ('y-lava','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useLavaOceans":True,"seaLevel":70}),['PHYS'],''),
+ ('y-lava','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useLavaOceans":True,"seaLevel":56}),['PHYS'],''),
  ('y-lavacuevas','CUSTOMIZED',J({"useLavaLakes":True,"lavaLakeChance":10,"useCaves":True,"useRavines":True,"seaLevel":6,"baseSize":5.0}),['PART','LEAVE'],''),
  ('y-picos','CUSTOMIZED',J({"biomeDepthOffset":4.0,"biomeScaleOffset":8.0,"heightScale":1500}),['PHYS'],''),
  ('y-aguaalta','CUSTOMIZED',J({"seaLevel":130}),['PHYS','PART'],''), ('y-pantano','CUSTOMIZED',J({"fixedBiome":6,"seaLevel":75}),['PHYS','LEAVE'],''),
