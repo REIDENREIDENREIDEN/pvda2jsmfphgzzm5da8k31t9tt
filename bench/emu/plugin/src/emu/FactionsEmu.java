@@ -166,7 +166,8 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
                     int top = world.getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
                     int y = Math.min(getConfig().getInt("world.floating-max-y", 240), top + 4 + r.nextInt(getConfig().getInt("world.floating-spread", 10)));
                     int size = 1 + r.nextInt(getConfig().getInt("world.floating-size", 4));
-                    Material[] mats = {Material.STONE, Material.DIRT, Material.LEAVES, Material.COBBLESTONE, Material.SAND};
+                    // sin arena ni hojas: la arena cae y las hojas sueltas se pudren -> el /wild podia dejar al jugador sobre algo que desaparece
+                    Material[] mats = {Material.STONE, Material.DIRT, Material.COBBLESTONE, Material.SANDSTONE};
                     Material m = mats[r.nextInt(mats.length)];
                     for (int dx = 0; dx < size; dx++) {
                         for (int dz = 0; dz < size; dz++) {
@@ -877,7 +878,7 @@ public final class FactionsEmu extends JavaPlugin implements Listener {
     /** r2-terreno: destino seguro como un RTP real (piso solido sin liquido/cactus, pies y cabeza libres, sin lava al lado). */
     private static boolean safeSpot(World w, int x, int y, int z) {
         Block g = w.getBlockAt(x, y - 1, z), f = w.getBlockAt(x, y, z), h = w.getBlockAt(x, y + 1, z);
-        if (!g.getType().isSolid() || g.isLiquid() || g.getType() == Material.CACTUS) return false;
+        if (!g.getType().isSolid() || g.isLiquid() || g.getType() == Material.CACTUS || g.getType() == Material.SAND || g.getType() == Material.GRAVEL || g.getType() == Material.LEAVES || g.getType() == Material.LEAVES_2) return false;
         if (f.getType().isSolid() || h.getType().isSolid() || f.isLiquid() || h.isLiquid()) return false;
         for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = -1; dy <= 1; dy++) {
             Material m = w.getBlockAt(x + dx, y + dy, z + dz).getType();
